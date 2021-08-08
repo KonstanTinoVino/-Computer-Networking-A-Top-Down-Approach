@@ -16,6 +16,7 @@ def get_file_request(request_message):
         return url
     except:
         print("Unexpected error:", sys.exc_info()[0])
+        return ""
 
 
 def construct_response_heather(duck):
@@ -50,15 +51,12 @@ while True:
         if file_request == "duck.png":
             response = construct_response(True)
             connectionSocket.send(response.encode())
-            bytes_read = open(duckFile, encoding="utf8", errors="ignore").read()
-            connectionSocket.sendall(bytes_read.encode())
+            bytes_read = open(duckFile, "rb").read()
+            connectionSocket.sendall(bytes_read)
         else:
             response = construct_response(False)
             connectionSocket.send(response.encode())
         print(response)
-
-
-
 
     connectionSocket.close()
 
