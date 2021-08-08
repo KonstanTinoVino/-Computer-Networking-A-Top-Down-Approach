@@ -19,6 +19,14 @@ def get_file_request(request_message):
         return ""
 
 
+def return_file(file):
+    return Path(os.path.join(dirname, 'Resources/' + file))
+
+
+def check_if_exists(file):
+    return os.path.exists(os.path.join(dirname, 'Resources/' + file))
+
+
 def construct_response_heather(duck):
     ts = time.gmtime()
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S", ts)
@@ -48,15 +56,18 @@ while True:
     url = get_file_request(response)
     if url is not None:
         file_request = url.split('/')[-1]
-        if file_request == "duck.png":
+        exists = check_if_exists(file_request)
+        if exists:
             response = construct_response(True)
             connectionSocket.send(response.encode())
-            bytes_read = open(duckFile, "rb").read()
+            bytes_read = open(return_file(file_request), "rb").read()
             connectionSocket.sendall(bytes_read)
+            print(response)
         else:
             response = construct_response(False)
             connectionSocket.send(response.encode())
-        print(response)
+            print(response)
+
 
     connectionSocket.close()
 
