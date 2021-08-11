@@ -3,10 +3,12 @@ import sys
 import time
 from pathlib import Path
 from sample.Chapter2.Exercises.server import Server
+from threading import Thread
 
 dirname = os.path.dirname(__file__)
 duckFile = Path(os.path.join(dirname, 'Resources/duck.png'))
 filename = "duck.png"
+server_socket = Server("localhost", 12000, "TCP", 1)
 
 
 def get_file_request(request_message):
@@ -23,7 +25,7 @@ def return_file(file):
     return Path(os.path.join(dirname, 'Resources/' + file))
 
 
-def check_if_exists(file):
+def check_if_file_exists(file):
     return os.path.exists(os.path.join(dirname, 'Resources/' + file))
 
 
@@ -48,26 +50,31 @@ def construct_response(duck):
         return heather
 
 
-serverSocket = Server("localhost", 12000, "TCP", 5)
-print("The server is ready to receive")
-while True:
-    connectionSocket, addr = serverSocket.socket.accept()
-    response = connectionSocket.recv(1024).decode()
-    url = get_file_request(response)
-    if url is not None:
-        file_request = url.split('/')[-1]
-        exists = check_if_exists(file_request)
-        if exists:
-            response = construct_response(True)
-            connectionSocket.send(response.encode())
-            bytes_read = open(return_file(file_request), "rb").read()
-            connectionSocket.sendall(bytes_read)
-            print(response)
-        else:
-            response = construct_response(False)
-            connectionSocket.send(response.encode())
-            print(response)
+def server_thread(port, thread):
+    print("The server is ready to receive")
+    while True:
+        connection_socket, addr = server_socket.socket.accept()
+        response = connection_socket.recv(port).decode()
+        url = get_file_request(response)
+        if url is not None:
+            print("received request for Thread" + thread)
+            file_request = url.split('/')[-1]
+            exists = check_if_file_exists(file_request)
+            if exists:
+                response = construct_response(True)
+                connection_socket.send(response.encode())
+                bytes_read = open(return_file(file_request), "rb").read()
+                connection_socket.sendall(bytes_read)
+                print(response)
+            else:
+                response = construct_response(False)
+                connection_socket.send(response.encode())
+                print(response)
+
+        connection_socket.close()
 
 
-    connectionSocket.close()
-
+print("Starting Thread 1")
+Thread(target=server_thread, args=(1271, "1",)).start()
+print("Starting Thread 2")
+Thread(target=server_thread, args=(1272, "2",)).start()
