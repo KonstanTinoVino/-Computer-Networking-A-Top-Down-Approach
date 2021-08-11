@@ -2,7 +2,7 @@ import os
 import sys
 import time
 from pathlib import Path
-from server import Server
+from Server import Server
 from threading import Thread
 
 dirname = os.path.dirname(__file__)
