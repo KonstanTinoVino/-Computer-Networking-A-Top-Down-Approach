@@ -15,7 +15,11 @@ def server_thread(port, thread):
             try:
                 response = connection_socket.recv(port)
                 fragment = pickle.loads(response)
-                print(str(fragment.data, 'utf-8'))
+                message = str(fragment.data, 'utf-8')
+                print(message)
+                if message == "END":
+                    print(" No more Information ")
+                    condition = False
             except EOFError:
                 print(" No more Information ")
                 condition = False

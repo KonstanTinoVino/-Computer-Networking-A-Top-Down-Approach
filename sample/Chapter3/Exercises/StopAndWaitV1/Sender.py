@@ -10,6 +10,7 @@ clientSocket.connect(server_address)
 packets = []
 message = "Now is the winter of my discontent, made glorious summer by our son of York"
 fragments = message.split(" ")
+fragments.append("END")
 
 
 print("Creating Packets")
