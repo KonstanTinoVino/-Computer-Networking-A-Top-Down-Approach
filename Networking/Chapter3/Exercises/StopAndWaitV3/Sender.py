@@ -1,7 +1,9 @@
+import socket
 from socket import *
 import Networking.Chapter3.Exercises.StopAndWaitUtility.TCPPacket as packet_class
 import pickle
 import random
+
 
 
 def generate_checksum(byte_array, error_bit):
@@ -41,6 +43,7 @@ def regenerate_clean_packet(error_packet):
 server_address = ('localhost', 12000)
 clientSocket = socket(AF_INET, SOCK_STREAM)
 clientSocket.connect(server_address)
+clientSocket.settimeout(1)
 
 message = "Now is the winter of my discontent, made glorious summer by our son of York"
 fragments = message.split(" ")
@@ -57,10 +60,15 @@ for packet in packets:
     packet.sequence = seq
     print("Sending packet data: " + packet.data.decode() + " sequence: " + str(packet.sequence))
     dGram = pickle.dumps(packet)
-    clientSocket.send(dGram)
-    acknowledgement = clientSocket.recv(1024)
-    fragment = pickle.loads(acknowledgement)
-    message = str(fragment.data, 'utf-8')
+    message = None
+    while message is None:
+        try:
+            clientSocket.send(dGram)
+            acknowledgement = clientSocket.recv(1024)
+            fragment = pickle.loads(acknowledgement)
+            message = str(fragment.data, 'utf-8')
+        except:
+            print("Packet Presumed Lost, Resending...")
     if message != "1":
         if message == "0":
             print("Packet was received with errors")
@@ -70,10 +78,15 @@ for packet in packets:
         while condition:
             print("Resending Packet")
             dGram = regenerate_clean_packet(packet)
-            clientSocket.send(dGram)
-            acknowledgement = clientSocket.recv(1024)
-            fragment = pickle.loads(acknowledgement)
-            message = str(fragment.data, 'utf-8')
+            message = None
+            while message is None:
+                try:
+                    clientSocket.send(dGram)
+                    acknowledgement = clientSocket.recv(1024)
+                    fragment = pickle.loads(acknowledgement)
+                    message = str(fragment.data, 'utf-8')
+                except:
+                    print("Packet Presumed Lost, Resending...")
             if message == "1":
                 condition = False
     else:

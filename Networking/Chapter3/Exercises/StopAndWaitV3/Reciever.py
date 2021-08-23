@@ -39,6 +39,14 @@ def roll_for_error():
     return 0
 
 
+def roll_for_loss():
+    rand = random.randint(0, 10)
+    if rand < 4:
+        print("Packet Will be Lost")
+        return 1
+    return 0
+
+
 def server_thread(port):
     print("The server is ready to receive")
     past_sequence = 1;
@@ -47,6 +55,7 @@ def server_thread(port):
         condition = True;
         while condition:
             try:
+                loss = roll_for_loss()
                 seq = roll_for_error()
                 response = connection_socket.recv(port)
                 fragment = pickle.loads(response)
@@ -54,7 +63,7 @@ def server_thread(port):
                 sequence_recieved = fragment.sequence
                 value = check_checksum(message, fragment.checksum)
                 print("-------------------------------------------------------", message, " sequence recieved: ", sequence_recieved, " past sequence: ",past_sequence)
-                if value == 0 or past_sequence == sequence_recieved:
+                if (value == 0 or past_sequence == sequence_recieved) and loss == 0:
                     if past_sequence == sequence_recieved:
                         print("Packet received twice")
                     else:
@@ -64,13 +73,18 @@ def server_thread(port):
                     connection_socket.send(d_gram)
                     past_sequence = sequence_recieved
                 else:
-                    print("Packet Corrupted")
-                    response = seq + 0
+                    if loss == 0:
+                        print("Packet Corrupted")
+                        response = seq + 0
+                        d_gram = generate_ACK(str(response))
+                        connection_socket.send(d_gram)
+                        past_sequence = sequence_recieved
+                if message == "END":
+                    print(" No more Information ")
+                    response = seq + 1
                     d_gram = generate_ACK(str(response))
                     connection_socket.send(d_gram)
                     past_sequence = sequence_recieved
-                if message == "END":
-                    print(" No more Information ")
                     condition = False
             except EOFError:
                 print(" Premature End Of File ")
