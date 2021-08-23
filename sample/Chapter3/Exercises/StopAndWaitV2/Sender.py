@@ -33,7 +33,7 @@ def regenerate_clean_packet(error_packet):
     data = error_packet.actual_data
     a_byte_array = bytearray(data, "utf8")
     checksum = generate_checksum(a_byte_array, 0)
-    pack = packet_class.Packet(data.encode('UTF-8'), "", checksum, data)
+    pack = packet_class.Packet(data.encode('UTF-8'), error_packet.sequence, checksum, data)
     d_gram = pickle.dumps(pack)
     return d_gram
 
@@ -51,15 +51,21 @@ packets = generate_packets_to_send(fragments)
 
 
 print("Sending Packets")
+
 for packet in packets:
-    print("Sending packet data: " + packet.data.decode())
+    seq = packets.index(packet) % 2
+    packet.sequence = seq
+    print("Sending packet data: " + packet.data.decode() + " sequence: " + str(packet.sequence))
     dGram = pickle.dumps(packet)
     clientSocket.send(dGram)
     acknowledgement = clientSocket.recv(1024)
     fragment = pickle.loads(acknowledgement)
     message = str(fragment.data, 'utf-8')
-    if message == "0":
-        print("Packet was received with errors")
+    if message != "1":
+        if message == "0":
+            print("Packet was received with errors")
+        else:
+            print("ACK was corrupted")
         condition = True
         while condition:
             print("Resending Packet")
@@ -72,3 +78,5 @@ for packet in packets:
                 condition = False
     else:
         print("Packet received successfully")
+
+clientSocket.close()

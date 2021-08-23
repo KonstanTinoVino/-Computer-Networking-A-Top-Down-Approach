@@ -2,6 +2,7 @@ import sample.Chapter2.Exercises.AssignmentHttpServer.Server as server
 import sample.Chapter3.Exercises.StopAndWaitUtility.TCPPacket as packet
 from threading import Thread
 import pickle
+import random
 
 server_socket = server.Server("localhost", 12000, "TCP", 10000)
 
@@ -30,26 +31,44 @@ def generate_ACK(ack):
     return d_gram
 
 
+def roll_for_error():
+    rand = random.randint(0, 10)
+    if rand < 4:
+        print("ACK will be corrupted")
+        return 2
+    return 0
+
+
 def server_thread(port):
     print("The server is ready to receive")
+    past_sequence = 1;
     while True:
         connection_socket, addr = server_socket.socket.accept()
         condition = True;
         while condition:
             try:
+                seq = roll_for_error()
                 response = connection_socket.recv(port)
                 fragment = pickle.loads(response)
                 message = str(fragment.data, 'utf-8')
+                sequence_recieved = fragment.sequence
                 value = check_checksum(message, fragment.checksum)
-                if value == 0:
-                    print("Correct Packet")
-                    d_gram = generate_ACK("1")
+                print("-------------------------------------------------------", message, " sequence recieved: ", sequence_recieved, " past sequence: ",past_sequence)
+                if value == 0 or past_sequence == sequence_recieved:
+                    if past_sequence == sequence_recieved:
+                        print("Packet received twice")
+                    else:
+                        print("Correct Packet")
+                    response = seq + 1
+                    d_gram = generate_ACK(str(response))
                     connection_socket.send(d_gram)
+                    past_sequence = sequence_recieved
                 else:
-                    print("Wrong Packet")
-                    print("value----------", value, message)
-                    d_gram = generate_ACK("0")
+                    print("Packet Corrupted")
+                    response = seq + 0
+                    d_gram = generate_ACK(str(response))
                     connection_socket.send(d_gram)
+                    past_sequence = sequence_recieved
                 if message == "END":
                     print(" No more Information ")
                     condition = False
