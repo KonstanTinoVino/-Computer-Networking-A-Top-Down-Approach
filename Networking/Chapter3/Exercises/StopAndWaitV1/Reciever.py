@@ -1,5 +1,5 @@
-import sample.Chapter2.Exercises.AssignmentHttpServer.Server as server
-import sample.Chapter3.Exercises.StopAndWaitUtility.TCPPacket as packet
+import Networking.Chapter2.Exercises.AssignmentHttpServer.Server as server
+import Networking.Chapter3.Exercises.StopAndWaitUtility.TCPPacket as packet
 from threading import Thread
 import pickle
 

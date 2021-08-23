@@ -1,5 +1,5 @@
 from socket import *
-import sample.Chapter3.Exercises.StopAndWaitUtility.TCPPacket as packet_class
+import Networking.Chapter3.Exercises.StopAndWaitUtility.TCPPacket as packet_class
 import pickle
 import random
 
