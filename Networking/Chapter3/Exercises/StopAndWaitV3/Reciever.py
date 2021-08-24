@@ -4,6 +4,7 @@ from threading import Thread
 import pickle
 import random
 
+# Creating server object
 server_socket = server.Server("localhost", 12000, "TCP", 10000)
 
 
@@ -47,22 +48,39 @@ def roll_for_loss():
     return 0
 
 
+"""
+Main Server Thread. 
+"""
+
+
 def server_thread(port):
     print("The server is ready to receive")
+    # Variable to hold previous sequence number
     past_sequence = 1
     while True:
+        # Accept incoming connection
         connection_socket, addr = server_socket.socket.accept()
         condition = True
+        # While receiving data from sender
         while condition:
             try:
+                # Randomly generate a value that will determine whether ACK the packet will be lost.
+                # if loss == 1 -> ACK packet will be "lost", else it loss == 0 ACK will be sent.
                 loss = roll_for_loss()
+                # Randomly generate a value that will determine whether the ACK packet will be corrupted.
+                # if seq == 2 -> ACK packet will be "corrupted", else it seq == 0 ACK will be OK.
                 seq = roll_for_error()
+                # Receive from sender
                 response = connection_socket.recv(port)
+                # Deserialize packet with Pickle
                 fragment = pickle.loads(response)
                 message = str(fragment.data, 'utf-8')
                 sequence_received = fragment.sequence
+                # generate checksum chek. If value == 0 package was not corrupted, else -> corrupted
                 value = check_checksum(message, fragment.checksum)
-                print("-------------------------------------------------------", message, " sequence recieved: ", sequence_received, " past sequence: ", past_sequence)
+                print("-------------------------------------------------------", message, " sequence recieved: ",
+                      sequence_received, " past sequence: ", past_sequence)
+                # if package was not corrupted or lost sent an ACK
                 if (value == 0 or past_sequence == sequence_received) and loss == 0:
                     if past_sequence == sequence_received:
                         print("Packet received twice")
@@ -72,6 +90,7 @@ def server_thread(port):
                     d_gram = generate_ACK(str(response))
                     connection_socket.send(d_gram)
                     past_sequence = sequence_received
+                # Else if package was corrupted send an NACK, unless loss >0
                 else:
                     if loss == 0:
                         print("Packet Corrupted")
@@ -79,6 +98,7 @@ def server_thread(port):
                         d_gram = generate_ACK(str(response))
                         connection_socket.send(d_gram)
                         past_sequence = sequence_received
+                # If last message data contains keyword end send final acknowledgement and stop expecting input
                 if message == "END":
                     print(" No more Information ")
                     response = seq + 1
@@ -86,6 +106,7 @@ def server_thread(port):
                     connection_socket.send(d_gram)
                     past_sequence = sequence_received
                     condition = False
+            # Catch error if sender does not finish sending data with "END" keyword
             except EOFError:
                 print(" Premature End Of File ")
                 print(" No more Information ")
@@ -93,5 +114,6 @@ def server_thread(port):
         connection_socket.close()
 
 
+# Create a server thread
 print("Starting Thread 1")
 Thread(target=server_thread, args=(1271,)).start()
