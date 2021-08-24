@@ -49,10 +49,10 @@ def roll_for_loss():
 
 def server_thread(port):
     print("The server is ready to receive")
-    past_sequence = 1;
+    past_sequence = 1
     while True:
         connection_socket, addr = server_socket.socket.accept()
-        condition = True;
+        condition = True
         while condition:
             try:
                 loss = roll_for_loss()
@@ -60,31 +60,31 @@ def server_thread(port):
                 response = connection_socket.recv(port)
                 fragment = pickle.loads(response)
                 message = str(fragment.data, 'utf-8')
-                sequence_recieved = fragment.sequence
+                sequence_received = fragment.sequence
                 value = check_checksum(message, fragment.checksum)
-                print("-------------------------------------------------------", message, " sequence recieved: ", sequence_recieved, " past sequence: ",past_sequence)
-                if (value == 0 or past_sequence == sequence_recieved) and loss == 0:
-                    if past_sequence == sequence_recieved:
+                print("-------------------------------------------------------", message, " sequence recieved: ", sequence_received, " past sequence: ", past_sequence)
+                if (value == 0 or past_sequence == sequence_received) and loss == 0:
+                    if past_sequence == sequence_received:
                         print("Packet received twice")
                     else:
                         print("Correct Packet")
                     response = seq + 1
                     d_gram = generate_ACK(str(response))
                     connection_socket.send(d_gram)
-                    past_sequence = sequence_recieved
+                    past_sequence = sequence_received
                 else:
                     if loss == 0:
                         print("Packet Corrupted")
                         response = seq + 0
                         d_gram = generate_ACK(str(response))
                         connection_socket.send(d_gram)
-                        past_sequence = sequence_recieved
+                        past_sequence = sequence_received
                 if message == "END":
                     print(" No more Information ")
                     response = seq + 1
                     d_gram = generate_ACK(str(response))
                     connection_socket.send(d_gram)
-                    past_sequence = sequence_recieved
+                    past_sequence = sequence_received
                     condition = False
             except EOFError:
                 print(" Premature End Of File ")
